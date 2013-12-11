@@ -7,7 +7,7 @@
     <ProjectGuid>{F66D400B-F249-4B1C-9648-730256931EAF}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GtPressApp</RootNamespace>
+    <RootNamespace>GtPress.StoreApp</RootNamespace>
     <AssemblyName>GtPressApp</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <FileAlignment>512</FileAlignment>

@@ -1,28 +1,17 @@
-﻿using GtPressApp.Data;
-
+﻿// The Group Detail Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234229
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
+using GtPress.StoreApp.Common;
+using GtPress.StoreApp.DataModel;
 
-// The Group Detail Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234229
-
-namespace GtPressApp
+namespace GtPress.StoreApp
 {
     /// <summary>
     /// A page that displays an overview of a single group, including a preview of the items
     /// within the group.
     /// </summary>
-    public sealed partial class GroupDetailPage : GtPressApp.Common.LayoutAwarePage
+    public sealed partial class GroupDetailPage : LayoutAwarePage
     {
         public GroupDetailPage()
         {

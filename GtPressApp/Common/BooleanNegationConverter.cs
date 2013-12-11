@@ -1,7 +1,7 @@
 ﻿using System;
 using Windows.UI.Xaml.Data;
 
-namespace GtPressApp.Common
+namespace GtPress.StoreApp.Common
 {
     /// <summary>
     /// Value converter that translates true to false and vice versa.

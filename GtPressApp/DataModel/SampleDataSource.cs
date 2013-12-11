@@ -1,32 +1,26 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Windows.ApplicationModel.Resources.Core;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI.Xaml.Data;
+using System.Collections.Specialized;
+using System.Linq;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
-using System.Collections.Specialized;
-
 // The data model defined by this file serves as a representative example of a strongly-typed
 // model that supports notification when members are added, removed, or modified.  The property
 // names chosen coincide with data bindings in the standard item templates.
 //
 // Applications may use this model as a starting point and build on it, or discard it entirely and
 // replace it with something appropriate to their needs.
+using GtPress.StoreApp.Common;
 
-namespace GtPressApp.Data
+namespace GtPress.StoreApp.DataModel
 {
     /// <summary>
     /// Base class for <see cref="SampleDataItem"/> and <see cref="SampleDataGroup"/> that
     /// defines properties common to both.
     /// </summary>
     [Windows.Foundation.Metadata.WebHostHidden]
-    public abstract class SampleDataCommon : GtPressApp.Common.BindableBase
+    public abstract class SampleDataCommon : BindableBase
     {
         private static Uri _baseUri = new Uri("ms-appx:///");
 
