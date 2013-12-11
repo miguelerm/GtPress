@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("GtPressApp")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("GtPress")]
+[assembly: AssemblyDescription("Aplicacion para leer las noticias publicadas en las prensas escritas de Guatemala")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("GtPressApp")]
-[assembly: AssemblyCopyright("Copyright ©  2013")]
+[assembly: AssemblyCompany("Mike Developer")]
+[assembly: AssemblyProduct("GtPress")]
+[assembly: AssemblyCopyright("Copyright © Mike 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
