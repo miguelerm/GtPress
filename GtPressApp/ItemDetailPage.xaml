@@ -31,7 +31,7 @@
         d:DataContext="{Binding AllGroups[0], Source={d:DesignInstance Type=dataModel:SampleDataSource, IsDesignTimeCreatable=True}}">
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="140"/>
+            <RowDefinition Height="100"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -50,7 +50,7 @@
 
             <FlipView.ItemContainerStyle>
                 <Style TargetType="FlipViewItem">
-                    <Setter Property="Margin" Value="0,137,0,0"/>
+                    <Setter Property="Margin" Value="0,100,0,0"/>
                 </Style>
             </FlipView.ItemContainerStyle>
 

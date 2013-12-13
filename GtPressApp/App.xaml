@@ -16,7 +16,7 @@
 
             <!-- Application-specific resources -->
 
-            <x:String x:Key="AppName">GtPressApp</x:String>
+            <x:String x:Key="AppName">Noticias de Guatemala</x:String>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
