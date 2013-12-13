@@ -1,6 +1,8 @@
 ﻿// The Item Detail Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234232
 using System;
 using System.Collections.Generic;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Foundation;
 using Windows.UI.Xaml.Controls;
 using GtPress.StoreApp.Common;
 using GtPress.StoreApp.DataModel;
@@ -16,6 +18,7 @@ namespace GtPress.StoreApp
         public ItemDetailPage()
         {
             this.InitializeComponent();
+            RegisterForShare();
         }
 
         /// <summary>
@@ -52,6 +55,26 @@ namespace GtPress.StoreApp
         {
             var selectedItem = (SampleDataItem)this.flipView.SelectedItem;
             pageState["SelectedItem"] = selectedItem.UniqueId;
+        }
+
+        private void RegisterForShare()
+        {
+            DataTransferManager dataTransferManager = DataTransferManager.GetForCurrentView();
+            dataTransferManager.DataRequested += new TypedEventHandler<DataTransferManager,
+                DataRequestedEventArgs>(this.ShareLinkHandler);
+        }
+
+        private void ShareLinkHandler(DataTransferManager sender, DataRequestedEventArgs e)
+        {
+            var selectedItem = flipView.SelectedItem as SampleDataItem;
+
+            if (selectedItem != null)
+            {
+                DataRequest request = e.Request;
+                request.Data.Properties.Title = selectedItem.Title;
+                request.Data.Properties.Description = selectedItem.Description;
+                request.Data.SetUri(new Uri(selectedItem.UniqueId));
+            }
         }
     }
 }
