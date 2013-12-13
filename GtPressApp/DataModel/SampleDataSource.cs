@@ -3,6 +3,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Net;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Xml;
+using Windows.Data.Xml.Dom;
+using Windows.Storage;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 // The data model defined by this file serves as a representative example of a strongly-typed
@@ -58,7 +64,7 @@ namespace GtPress.StoreApp.DataModel
         public string Description
         {
             get { return this._description; }
-            set { this.SetProperty(ref this._description, value); }
+            set { SetProperty(ref _description, value); }
         }
 
         private ImageSource _image = null;
@@ -69,7 +75,7 @@ namespace GtPress.StoreApp.DataModel
             {
                 if (this._image == null && this._imagePath != null)
                 {
-                    this._image = new BitmapImage(new Uri(SampleDataCommon._baseUri, this._imagePath));
+                    this._image = new BitmapImage(new Uri(_imagePath));
                 }
                 return this._image;
             }
@@ -126,14 +132,31 @@ namespace GtPress.StoreApp.DataModel
     /// </summary>
     public class SampleDataGroup : SampleDataCommon
     {
-        public SampleDataGroup(String uniqueId, String title, String subtitle, String imagePath, String description)
+
+        private string feedUrl;
+
+        public String FeedUrl
+        {
+            get
+            {
+                return feedUrl;
+            }
+            set
+            {
+                SetProperty(ref feedUrl, value);
+            }
+        }
+
+        public SampleDataGroup(String uniqueId, String title, String subtitle, String imagePath, String description, String feedUrl)
             : base(uniqueId, title, subtitle, imagePath, description)
         {
+            this.feedUrl = feedUrl;
             Items.CollectionChanged += ItemsCollectionChanged;
         }
 
-        private void ItemsCollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        private void ItemsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
+
             // Provides a subset of the full items collection to bind to from a GroupedItemsPage
             // for two reasons: GridView will not virtualize large items collections, and it
             // improves the user experience when browsing through groups with large numbers of
@@ -142,53 +165,55 @@ namespace GtPress.StoreApp.DataModel
             // A maximum of 12 items are displayed because it results in filled grid columns
             // whether there are 1, 2, 3, 4, or 6 rows displayed
 
+            const int maxItems = 6;
+
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    if (e.NewStartingIndex < 12)
+                    if (e.NewStartingIndex < maxItems)
                     {
                         TopItems.Insert(e.NewStartingIndex,Items[e.NewStartingIndex]);
-                        if (TopItems.Count > 12)
+                        if (TopItems.Count > maxItems)
                         {
-                            TopItems.RemoveAt(12);
+                            TopItems.RemoveAt(maxItems);
                         }
                     }
                     break;
                 case NotifyCollectionChangedAction.Move:
-                    if (e.OldStartingIndex < 12 && e.NewStartingIndex < 12)
+                    if (e.OldStartingIndex < maxItems && e.NewStartingIndex < maxItems)
                     {
                         TopItems.Move(e.OldStartingIndex, e.NewStartingIndex);
                     }
-                    else if (e.OldStartingIndex < 12)
+                    else if (e.OldStartingIndex < maxItems)
                     {
                         TopItems.RemoveAt(e.OldStartingIndex);
-                        TopItems.Add(Items[11]);
+                        TopItems.Add(Items[maxItems - 1]);
                     }
-                    else if (e.NewStartingIndex < 12)
+                    else if (e.NewStartingIndex < maxItems)
                     {
                         TopItems.Insert(e.NewStartingIndex, Items[e.NewStartingIndex]);
-                        TopItems.RemoveAt(12);
+                        TopItems.RemoveAt(maxItems);
                     }
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    if (e.OldStartingIndex < 12)
+                    if (e.OldStartingIndex < maxItems)
                     {
                         TopItems.RemoveAt(e.OldStartingIndex);
-                        if (Items.Count >= 12)
+                        if (Items.Count >= maxItems)
                         {
-                            TopItems.Add(Items[11]);
+                            TopItems.Add(Items[maxItems - 1]);
                         }
                     }
                     break;
                 case NotifyCollectionChangedAction.Replace:
-                    if (e.OldStartingIndex < 12)
+                    if (e.OldStartingIndex < maxItems)
                     {
                         TopItems[e.OldStartingIndex] = Items[e.OldStartingIndex];
                     }
                     break;
                 case NotifyCollectionChangedAction.Reset:
                     TopItems.Clear();
-                    while (TopItems.Count < Items.Count && TopItems.Count < 12)
+                    while (TopItems.Count < Items.Count && TopItems.Count < maxItems)
                     {
                         TopItems.Add(Items[TopItems.Count]);
                     }
@@ -217,6 +242,12 @@ namespace GtPress.StoreApp.DataModel
     /// </summary>
     public sealed class SampleDataSource
     {
+
+        private static Regex laHoraImageRegex = new Regex(@"<img.*?src=""(.*?)"".*?>\s*?<p>(.*)</p>");
+        private static Regex laHora2ImageRegex = new Regex(@"<img.*?src=""(.*?)"".*?>");
+        private static Regex publiNewsImageRegex = new Regex(@"<img.*?src=""(.*?)"".*?>");
+        private static Regex siglo21ImageRegex = new Regex(@"<img.*?src="".*?"".*?><a.*?href=""(.*?)"".*?type=""image/jpeg;.*?"".*?>");
+
         private static SampleDataSource _sampleDataSource = new SampleDataSource();
 
         private ObservableCollection<SampleDataGroup> _allGroups = new ObservableCollection<SampleDataGroup>();
@@ -250,281 +281,145 @@ namespace GtPress.StoreApp.DataModel
 
         public SampleDataSource()
         {
-            String ITEM_CONTENT = String.Format("Item Content: {0}\n\n{0}\n\n{0}\n\n{0}\n\n{0}\n\n{0}\n\n{0}",
-                        "Curabitur class aliquam vestibulum nam curae maecenas sed integer cras phasellus suspendisse quisque donec dis praesent accumsan bibendum pellentesque condimentum adipiscing etiam consequat vivamus dictumst aliquam duis convallis scelerisque est parturient ullamcorper aliquet fusce suspendisse nunc hac eleifend amet blandit facilisi condimentum commodo scelerisque faucibus aenean ullamcorper ante mauris dignissim consectetuer nullam lorem vestibulum habitant conubia elementum pellentesque morbi facilisis arcu sollicitudin diam cubilia aptent vestibulum auctor eget dapibus pellentesque inceptos leo egestas interdum nulla consectetuer suspendisse adipiscing pellentesque proin lobortis sollicitudin augue elit mus congue fermentum parturient fringilla euismod feugiat");
+            AllGroups.Add(new SampleDataGroup("PrensaLibre", "Prensa Libre", "Prensa Libre", null, "Prensa Libre", "http://www.prensalibre.com/rss/latest/"));
+            AllGroups.Add(new SampleDataGroup("PubliNews", "Publi News", "Publi News", null, "Publi News", "http://www.publinews.gt/index.php/feed/"));
+            AllGroups.Add(new SampleDataGroup("Siglo21", "Sigo 21", "Siglo 21", null, "Siglo 21", "http://www.s21.com.gt/feed/portada"));
+            AllGroups.Add(new SampleDataGroup("LaHora", "La Hora", "La Hora", null, "La Hora", "http://www.lahora.com.gt/index.php?format=feed&type=rss"));
 
-            var group1 = new SampleDataGroup("Group-1",
-                    "Group Title: 1",
-                    "Group Subtitle: 1",
-                    "Assets/DarkGray.png",
-                    "Group Description: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus tempor scelerisque lorem in vehicula. Aliquam tincidunt, lacus ut sagittis tristique, turpis massa volutpat augue, eu rutrum ligula ante a ante");
-            group1.Items.Add(new SampleDataItem("Group-1-Item-1",
-                    "Item Title: 1",
-                    "Item Subtitle: 1",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group1));
-            group1.Items.Add(new SampleDataItem("Group-1-Item-2",
-                    "Item Title: 2",
-                    "Item Subtitle: 2",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group1));
-            group1.Items.Add(new SampleDataItem("Group-1-Item-3",
-                    "Item Title: 3",
-                    "Item Subtitle: 3",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group1));
-            group1.Items.Add(new SampleDataItem("Group-1-Item-4",
-                    "Item Title: 4",
-                    "Item Subtitle: 4",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group1));
-            group1.Items.Add(new SampleDataItem("Group-1-Item-5",
-                    "Item Title: 5",
-                    "Item Subtitle: 5",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group1));
-            this.AllGroups.Add(group1);
+            LoadAllItems();
 
-            var group2 = new SampleDataGroup("Group-2",
-                    "Group Title: 2",
-                    "Group Subtitle: 2",
-                    "Assets/LightGray.png",
-                    "Group Description: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus tempor scelerisque lorem in vehicula. Aliquam tincidunt, lacus ut sagittis tristique, turpis massa volutpat augue, eu rutrum ligula ante a ante");
-            group2.Items.Add(new SampleDataItem("Group-2-Item-1",
-                    "Item Title: 1",
-                    "Item Subtitle: 1",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group2));
-            group2.Items.Add(new SampleDataItem("Group-2-Item-2",
-                    "Item Title: 2",
-                    "Item Subtitle: 2",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group2));
-            group2.Items.Add(new SampleDataItem("Group-2-Item-3",
-                    "Item Title: 3",
-                    "Item Subtitle: 3",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group2));
-            this.AllGroups.Add(group2);
+        }
 
-            var group3 = new SampleDataGroup("Group-3",
-                    "Group Title: 3",
-                    "Group Subtitle: 3",
-                    "Assets/MediumGray.png",
-                    "Group Description: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus tempor scelerisque lorem in vehicula. Aliquam tincidunt, lacus ut sagittis tristique, turpis massa volutpat augue, eu rutrum ligula ante a ante");
-            group3.Items.Add(new SampleDataItem("Group-3-Item-1",
-                    "Item Title: 1",
-                    "Item Subtitle: 1",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group3));
-            group3.Items.Add(new SampleDataItem("Group-3-Item-2",
-                    "Item Title: 2",
-                    "Item Subtitle: 2",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group3));
-            group3.Items.Add(new SampleDataItem("Group-3-Item-3",
-                    "Item Title: 3",
-                    "Item Subtitle: 3",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group3));
-            group3.Items.Add(new SampleDataItem("Group-3-Item-4",
-                    "Item Title: 4",
-                    "Item Subtitle: 4",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group3));
-            group3.Items.Add(new SampleDataItem("Group-3-Item-5",
-                    "Item Title: 5",
-                    "Item Subtitle: 5",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group3));
-            group3.Items.Add(new SampleDataItem("Group-3-Item-6",
-                    "Item Title: 6",
-                    "Item Subtitle: 6",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group3));
-            group3.Items.Add(new SampleDataItem("Group-3-Item-7",
-                    "Item Title: 7",
-                    "Item Subtitle: 7",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group3));
-            this.AllGroups.Add(group3);
+        private void LoadAllItems()
+        {
+            //AllGroups.AsParallel().ForAll(LoadItemsAsyc);
+            foreach (var group in AllGroups)
+            {
+                LoadItemsAsyc(group);
+            }
+        }
 
-            var group4 = new SampleDataGroup("Group-4",
-                    "Group Title: 4",
-                    "Group Subtitle: 4",
-                    "Assets/LightGray.png",
-                    "Group Description: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus tempor scelerisque lorem in vehicula. Aliquam tincidunt, lacus ut sagittis tristique, turpis massa volutpat augue, eu rutrum ligula ante a ante");
-            group4.Items.Add(new SampleDataItem("Group-4-Item-1",
-                    "Item Title: 1",
-                    "Item Subtitle: 1",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group4));
-            group4.Items.Add(new SampleDataItem("Group-4-Item-2",
-                    "Item Title: 2",
-                    "Item Subtitle: 2",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group4));
-            group4.Items.Add(new SampleDataItem("Group-4-Item-3",
-                    "Item Title: 3",
-                    "Item Subtitle: 3",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group4));
-            group4.Items.Add(new SampleDataItem("Group-4-Item-4",
-                    "Item Title: 4",
-                    "Item Subtitle: 4",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group4));
-            group4.Items.Add(new SampleDataItem("Group-4-Item-5",
-                    "Item Title: 5",
-                    "Item Subtitle: 5",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group4));
-            group4.Items.Add(new SampleDataItem("Group-4-Item-6",
-                    "Item Title: 6",
-                    "Item Subtitle: 6",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group4));
-            this.AllGroups.Add(group4);
+        private async void LoadItemsAsyc(SampleDataGroup sampleDataGroup)
+        {
+            var request = (HttpWebRequest) WebRequest.Create(sampleDataGroup.FeedUrl);
 
-            var group5 = new SampleDataGroup("Group-5",
-                    "Group Title: 5",
-                    "Group Subtitle: 5",
-                    "Assets/MediumGray.png",
-                    "Group Description: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus tempor scelerisque lorem in vehicula. Aliquam tincidunt, lacus ut sagittis tristique, turpis massa volutpat augue, eu rutrum ligula ante a ante");
-            group5.Items.Add(new SampleDataItem("Group-5-Item-1",
-                    "Item Title: 1",
-                    "Item Subtitle: 1",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group5));
-            group5.Items.Add(new SampleDataItem("Group-5-Item-2",
-                    "Item Title: 2",
-                    "Item Subtitle: 2",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group5));
-            group5.Items.Add(new SampleDataItem("Group-5-Item-3",
-                    "Item Title: 3",
-                    "Item Subtitle: 3",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group5));
-            group5.Items.Add(new SampleDataItem("Group-5-Item-4",
-                    "Item Title: 4",
-                    "Item Subtitle: 4",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group5));
-            this.AllGroups.Add(group5);
+            var response = await  request.GetResponseAsync();
 
-            var group6 = new SampleDataGroup("Group-6",
-                    "Group Title: 6",
-                    "Group Subtitle: 6",
-                    "Assets/DarkGray.png",
-                    "Group Description: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus tempor scelerisque lorem in vehicula. Aliquam tincidunt, lacus ut sagittis tristique, turpis massa volutpat augue, eu rutrum ligula ante a ante");
-            group6.Items.Add(new SampleDataItem("Group-6-Item-1",
-                    "Item Title: 1",
-                    "Item Subtitle: 1",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group6));
-            group6.Items.Add(new SampleDataItem("Group-6-Item-2",
-                    "Item Title: 2",
-                    "Item Subtitle: 2",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group6));
-            group6.Items.Add(new SampleDataItem("Group-6-Item-3",
-                    "Item Title: 3",
-                    "Item Subtitle: 3",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group6));
-            group6.Items.Add(new SampleDataItem("Group-6-Item-4",
-                    "Item Title: 4",
-                    "Item Subtitle: 4",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group6));
-            group6.Items.Add(new SampleDataItem("Group-6-Item-5",
-                    "Item Title: 5",
-                    "Item Subtitle: 5",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group6));
-            group6.Items.Add(new SampleDataItem("Group-6-Item-6",
-                    "Item Title: 6",
-                    "Item Subtitle: 6",
-                    "Assets/MediumGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group6));
-            group6.Items.Add(new SampleDataItem("Group-6-Item-7",
-                    "Item Title: 7",
-                    "Item Subtitle: 7",
-                    "Assets/DarkGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group6));
-            group6.Items.Add(new SampleDataItem("Group-6-Item-8",
-                    "Item Title: 8",
-                    "Item Subtitle: 8",
-                    "Assets/LightGray.png",
-                    "Item Description: Pellentesque porta, mauris quis interdum vehicula, urna sapien ultrices velit, nec venenatis dui odio in augue. Cras posuere, enim a cursus convallis, neque turpis malesuada erat, ut adipiscing neque tortor ac erat.",
-                    ITEM_CONTENT,
-                    group6));
-            this.AllGroups.Add(group6);
+            using (var stream = response.GetResponseStream())
+            {
+                var reader = XmlReader.Create(stream, new XmlReaderSettings { Async = true});
+
+                SampleDataItem newItem = null;
+
+                while (await reader.ReadAsync())
+                {
+
+                    if (reader.NodeType == XmlNodeType.Element)
+                    {
+                        if (reader.Name == "item")
+                        {
+                            newItem = new SampleDataItem(null, null, null, null, null, null, sampleDataGroup);
+                        }
+                        else if (newItem != null)
+                        {
+                            if (reader.Name == "title")
+                            {
+                                newItem.Title = await reader.ReadElementContentAsStringAsync();
+                            }
+                            else if (reader.Name == "link")
+                            {
+                                newItem.UniqueId = await reader.ReadElementContentAsStringAsync();
+                            }
+                            else if (reader.Name == "description")
+                            {
+                                newItem.Description = await reader.ReadElementContentAsStringAsync();
+
+                                if (newItem.Description != null && newItem.Group.UniqueId == "LaHora")
+                                {
+                                    // la hora
+                                    var match = laHoraImageRegex.Match(newItem.Description);
+                                    if (match.Success)
+                                    {
+                                        newItem.SetImage(match.Groups[1].Value);
+                                        newItem.Description = match.Groups[2].Value;
+                                    }
+                                    else
+                                    {
+                                        match = laHora2ImageRegex.Match(newItem.Description);
+                                        if (match.Success)
+                                        {
+                                            newItem.SetImage(match.Groups[1].Value);
+                                        }
+                                        newItem.Description = StripHTML(newItem.Description);
+                                    }
+                                }
+                                else if (newItem.Description != null && newItem.Group.UniqueId == "Siglo21")
+                                {
+                                    var match = siglo21ImageRegex.Match(newItem.Description);
+
+                                    if (match.Success)
+                                    {
+                                        newItem.SetImage(match.Groups[1].Value);
+                                        
+                                    }
+
+                                    newItem.Description = StripHTML(newItem.Description);
+                                }
+
+                                if (newItem.Description != null && newItem.Description.Length > 200)
+                                {
+                                    newItem.Description = newItem.Description.Substring(0, 200);
+                                }
+                            }
+                            else if (reader.Name == "pubDate")
+                            {
+                                
+                            }
+                            else if (reader.Name == "author")
+                            {
+                                 
+                            }
+                            else if (reader.Name == "enclosure")
+                            {
+                                while (reader.MoveToNextAttribute())
+                                {
+                                    if (reader.Name == "url")
+                                    {
+                                        newItem.SetImage(reader.Value);
+                                    }
+                                }
+                            }
+                            else if (reader.Name == "content:encoded")
+                            {
+                                var content = await reader.ReadElementContentAsStringAsync();
+                                if (content != null)
+                                {
+                                    var match = publiNewsImageRegex.Match(content);
+                                    if (match.Success)
+                                    {
+                                        newItem.SetImage(match.Groups[1].Value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (reader.NodeType == XmlNodeType.EndElement)
+                    {
+                        if (reader.Name == "item")
+                        {
+                            sampleDataGroup.Items.Add(newItem);
+                            newItem = null;  
+                        }
+                    }
+                }
+            }
+            
+        }
+
+        private static string StripHTML(string htmlText)
+        {
+            var reg = new Regex("<[^>]+>", RegexOptions.IgnoreCase);
+            return reg.Replace(htmlText, "");
         }
     }
 }
