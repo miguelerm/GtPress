@@ -281,10 +281,10 @@ namespace GtPress.StoreApp.DataModel
 
         public SampleDataSource()
         {
-            AllGroups.Add(new SampleDataGroup("PrensaLibre", "Prensa Libre", "Prensa Libre", null, "Prensa Libre", "http://www.prensalibre.com/rss/latest/"));
-            AllGroups.Add(new SampleDataGroup("PubliNews", "Publi News", "Publi News", null, "Publi News", "http://www.publinews.gt/index.php/feed/"));
-            AllGroups.Add(new SampleDataGroup("Siglo21", "Sigo 21", "Siglo 21", null, "Siglo 21", "http://www.s21.com.gt/feed/portada"));
-            AllGroups.Add(new SampleDataGroup("LaHora", "La Hora", "La Hora", null, "La Hora", "http://www.lahora.com.gt/index.php?format=feed&type=rss"));
+            AllGroups.Add(new SampleDataGroup("PrensaLibre", "Prensa Libre", "Prensa Libre", "ms-appx:///Assets/logo_prensalibre.jpg", "Últimas noticias de Guatemala y el mundo en Prensa Libre, Diario de Noticias Líder de Guatemala. El acontecer guatemalteco e internacional en PrensaLibre.com", "http://www.prensalibre.com/rss/latest/"));
+            AllGroups.Add(new SampleDataGroup("PubliNews", "Publi News", "Publi News", "ms-appx:///Assets/logo_publinews.png", "Publi News, Somos el diario global más grande del mundo. Informamos y entretenemos de forma directa y efectiva tanto on line como off line.", "http://www.publinews.gt/index.php/feed/"));
+            AllGroups.Add(new SampleDataGroup("Siglo21", "Sigo 21", "Siglo 21", "ms-appx:///Assets/logo_siglo_21.jpg", "Noticias de Guatemala y el mundo actualizadas a cada minuto. Siglo.21 Guatemala.", "http://www.s21.com.gt/feed/portada"));
+            AllGroups.Add(new SampleDataGroup("LaHora", "La Hora", "La Hora", "ms-appx:///Assets/logo_lahora.png", "La Hora - Tribuna, No Mostrador", "http://www.lahora.com.gt/index.php?format=feed&type=rss"));
 
             LoadAllItems();
 

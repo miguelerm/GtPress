@@ -1,11 +1,13 @@
 ﻿using System;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
+using Windows.UI.ApplicationSettings;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using GtPress.StoreApp.Common;
-
 // The Grid App template is documented at http://go.microsoft.com/fwlink/?LinkId=234226
+using GtPress.StoreApp.Views;
 
 namespace GtPress.StoreApp
 {
@@ -73,6 +75,22 @@ namespace GtPress.StoreApp
             }
             // Ensure the current window is active
             Window.Current.Activate();
+
+            SettingsPane.GetForCurrentView().CommandsRequested += ShowPrivacyPolicy;
+
+        }
+
+        // Method to add the privacy policy to the settings charm
+        private void ShowPrivacyPolicy(SettingsPane sender, SettingsPaneCommandsRequestedEventArgs args)
+        {
+            var privacyPolicyCommand = new SettingsCommand("privacyPolicy", "Políticas de privacidad", LaunchPrivacyPolicyUrl);
+            args.Request.ApplicationCommands.Add(privacyPolicyCommand);
+        }
+
+        // Method to launch the url of the privacy policy
+        private void LaunchPrivacyPolicyUrl(IUICommand command)
+        {
+            ((Frame)Window.Current.Content).Navigate(typeof(PrivacyPolicyView), "");
         }
 
         /// <summary>
