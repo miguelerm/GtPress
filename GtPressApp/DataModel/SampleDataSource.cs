@@ -295,7 +295,15 @@ namespace GtPress.StoreApp.DataModel
             //AllGroups.AsParallel().ForAll(LoadItemsAsyc);
             foreach (var group in AllGroups)
             {
-                LoadItemsAsyc(group);
+                try
+                {
+                    LoadItemsAsyc(group);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: {0}", ex);
+                }
+                
             }
         }
 

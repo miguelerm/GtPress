@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
-  <Identity Name="78MikeDeveloper.GtPress" Publisher="CN=357B5427-7D84-4292-A7BA-E012F9D3E988" Version="1.0.0.0" />
+  <Identity Name="78MikeDeveloper.GtPress" Publisher="CN=357B5427-7D84-4292-A7BA-E012F9D3E988" Version="1.0.0.1" />
   <Properties>
     <DisplayName>GtPress</DisplayName>
     <PublisherDisplayName>Mike Developer</PublisherDisplayName>
@@ -15,9 +15,13 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="GtPressApp.App">
-      <VisualElements DisplayName="GtPress" Logo="Assets\Logo.png" SmallLogo="Assets\SmallLogo.png" Description="GtPressApp" ForegroundText="light" BackgroundColor="#464646">
+      <VisualElements DisplayName="Periodicos GT" Logo="Assets\Logo.png" SmallLogo="Assets\SmallLogo.png" Description="Aplicación para leer los periódicos de Guatemala, utiliza los RSS de cada sitio de los periódicos pero los procesa para que la imagen y la descripción de cada noticia pueda leerse correctamente." ForegroundText="light" BackgroundColor="#464646">
         <DefaultTile ShowName="allLogos" />
         <SplashScreen Image="Assets\SplashScreen.png" />
+        <InitialRotationPreference>
+          <Rotation Preference="portrait" />
+          <Rotation Preference="landscape" />
+        </InitialRotationPreference>
       </VisualElements>
     </Application>
   </Applications>
