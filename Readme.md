@@ -3,6 +3,12 @@ GtPress
 
 GtPress es una aplicación para [Windows 8][WIN8] que permite leer las ultimas noticias de los periódicos de Guatemala en una sola interfaz.
 
+Instalar:
+--------
+
+Para instalar la aplicacion lo tienes que hacer desde el **Windows Store** buscando `GtPress` o siguiendo el enlace de [GtPress en el Windows Store][GtPressStore]: http://apps.microsoft.com/windows/app/gtpress/4211bcaf-4df4-4297-97e9-1829c2ba4530
+
+
 Características:
 --------------
 
@@ -10,7 +16,7 @@ Características:
 - Permite compartir una noticia por medio de las redes sociales utilizando las interfaces estándar de [Windows 8][WIN8].
 - Identifica los distintos formatos utilizados por los RSS de cada sitio y los interpreta para poder desplegar correctamente las imágenes y las descripciones de las noticias.
 
-To DO
+To DO:
 -----
 
 Algunas de las cosas que quedaron pendientes de implementar son:
@@ -51,3 +57,4 @@ Capturas de pantalla:
 [IMG03]: https://7tkimw.dm2304.livefilestore.com/y2pdKNq35SiwIKx0izURGSjk3Y2sxNgY5tSBgecbCbkM3spXil8WcMLO5JkXB9Iys_HKxnSezvmFbmL9yvJb02T6VFZlLyekNvDIxn6u523N3Q/03-detalle.png?psid=1 "Detalle de la noticia"
 [IMG04]: https://7tkimw.dm2302.livefilestore.com/y2pOHSB6O8qugJiaDVSfonA8Sv4abAuWpJ-4vkiqLWn8TttGDrzqFKZtcWcGSAWL7hK5St3QcX3a6J-AnCo84cqoBRPFLwLqdVKsVKgk7DCAfU/04-compartir.png?psid=1 "Compartir"
 [IMG05]: https://7tkimw.dm1.livefilestore.com/y2prN5-IzvEO8K1oUjgCDzzcJoG4QtLaRqK6lBMQCgQY485Y1gQDTBL8Z2zSpDEXaCtnFQDkB_FIX09aaeYnIOBYWAhQmQ7yNiMnmBMOkjqmic/05-compartir.png?psid=1 "Compartir en Facebook"
+[GtPressStore]: http://apps.microsoft.com/windows/app/gtpress/4211bcaf-4df4-4297-97e9-1829c2ba4530 "GtPress en el Store"
