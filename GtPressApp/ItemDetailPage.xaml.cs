@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
+using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using GtPress.StoreApp.Common;
 using GtPress.StoreApp.DataModel;
@@ -19,6 +20,7 @@ namespace GtPress.StoreApp
         {
             this.InitializeComponent();
             RegisterForShare();
+            
         }
 
         /// <summary>
@@ -43,6 +45,9 @@ namespace GtPress.StoreApp
             this.DefaultViewModel["Group"] = item.Group;
             this.DefaultViewModel["Items"] = item.Group.Items;
             this.flipView.SelectedItem = item;
+
+            progressBar.Visibility = Visibility.Visible;
+
         }
 
         /// <summary>
@@ -75,6 +80,11 @@ namespace GtPress.StoreApp
                 request.Data.Properties.Description = selectedItem.Description;
                 request.Data.SetUri(new Uri(selectedItem.UniqueId));
             }
+        }
+
+        private void webViewControl_LoadCompleted(object sender, Windows.UI.Xaml.Navigation.NavigationEventArgs e)
+        {
+            progressBar.Visibility = Visibility.Collapsed;
         }
     }
 }

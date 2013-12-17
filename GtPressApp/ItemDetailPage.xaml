@@ -56,8 +56,7 @@
 
             <FlipView.ItemTemplate>
                 <DataTemplate>
-                    
-                    <WebView extensions:WebViewExtensions.UriSource="{Binding UniqueId}"></WebView>
+                    <WebView x:Name="webViewControl" extensions:WebViewExtensions.UriSource="{Binding UniqueId}" LoadCompleted="webViewControl_LoadCompleted" ></WebView>
 
                 </DataTemplate>
             </FlipView.ItemTemplate>
@@ -71,6 +70,7 @@
             </Grid.ColumnDefinitions>
             <Button x:Name="backButton" Click="GoBack" IsEnabled="{Binding Frame.CanGoBack, ElementName=pageRoot}" Style="{StaticResource BackButtonStyle}"/>
             <TextBlock x:Name="pageTitle" Text="{Binding Title}" Style="{StaticResource PageHeaderTextStyle}" Grid.Column="1" IsHitTestVisible="false"/>
+            <ProgressBar x:Name="progressBar" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Grid.ColumnSpan="2" IsIndeterminate="True" Height="10" />
         </Grid>
 
         <VisualStateManager.VisualStateGroups>
