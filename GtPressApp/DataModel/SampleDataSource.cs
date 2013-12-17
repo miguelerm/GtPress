@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using Windows.Data.Xml.Dom;
+using Windows.Networking.Connectivity;
 using Windows.Storage;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
@@ -18,6 +19,7 @@ using Windows.UI.Xaml.Media.Imaging;
 // Applications may use this model as a starting point and build on it, or discard it entirely and
 // replace it with something appropriate to their needs.
 using GtPress.StoreApp.Common;
+using GtPress.StoreApp.Loggin;
 
 namespace GtPress.StoreApp.DataModel
 {
@@ -292,7 +294,12 @@ namespace GtPress.StoreApp.DataModel
 
         private void LoadAllItems()
         {
-            //AllGroups.AsParallel().ForAll(LoadItemsAsyc);
+            if (!IsInternet())
+            {
+                MetroEventSource.Log.Error("No se pudo establecer una conexion a internet.");
+                return;
+            }
+
             foreach (var group in AllGroups)
             {
                 try
@@ -301,15 +308,22 @@ namespace GtPress.StoreApp.DataModel
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine("Error: {0}", ex);
+                    MetroEventSource.Log.Critical(string.Format("Ocurrio un error al cargar los items del periodico {0}: {1}", group.Title, ex));
                 }
                 
             }
         }
 
-        private async void LoadItemsAsyc(SampleDataGroup sampleDataGroup)
+        public static bool IsInternet()
         {
-            var request = (HttpWebRequest) WebRequest.Create(sampleDataGroup.FeedUrl);
+            var connections = NetworkInformation.GetInternetConnectionProfile();
+            var internet = connections != null && connections.GetNetworkConnectivityLevel() == NetworkConnectivityLevel.InternetAccess;
+            return internet;
+        }
+
+        private async void LoadItemsAsyc(SampleDataGroup group)
+        {
+            var request = (HttpWebRequest) WebRequest.Create(group.FeedUrl);
 
             var response = await  request.GetResponseAsync();
 
@@ -317,111 +331,118 @@ namespace GtPress.StoreApp.DataModel
             {
                 var reader = XmlReader.Create(stream, new XmlReaderSettings { Async = true});
 
-                SampleDataItem newItem = null;
-
-                while (await reader.ReadAsync())
+                try
                 {
+                    await ParseItems(group, reader);
+                }
+                catch (Exception ex)
+                {
+                    MetroEventSource.Log.Critical(string.Format("Ocurrio un error al procesar los items del periodico {0}: {1}", group.Title, ex));
+                }
+            }
+        }
 
-                    if (reader.NodeType == XmlNodeType.Element)
+        private static async Task ParseItems(SampleDataGroup group, XmlReader reader)
+        {
+            SampleDataItem newItem = null;
+
+            while (await reader.ReadAsync())
+            {
+                if (reader.NodeType == XmlNodeType.Element)
+                {
+                    if (reader.Name == "item")
                     {
-                        if (reader.Name == "item")
+                        newItem = new SampleDataItem(null, null, null, null, null, null, group);
+                    }
+                    else if (newItem != null)
+                    {
+                        if (reader.Name == "title")
                         {
-                            newItem = new SampleDataItem(null, null, null, null, null, null, sampleDataGroup);
+                            newItem.Title = await reader.ReadElementContentAsStringAsync();
                         }
-                        else if (newItem != null)
+                        else if (reader.Name == "link")
                         {
-                            if (reader.Name == "title")
-                            {
-                                newItem.Title = await reader.ReadElementContentAsStringAsync();
-                            }
-                            else if (reader.Name == "link")
-                            {
-                                newItem.UniqueId = await reader.ReadElementContentAsStringAsync();
-                            }
-                            else if (reader.Name == "description")
-                            {
-                                newItem.Description = await reader.ReadElementContentAsStringAsync();
+                            newItem.UniqueId = await reader.ReadElementContentAsStringAsync();
+                        }
+                        else if (reader.Name == "description")
+                        {
+                            newItem.Description = await reader.ReadElementContentAsStringAsync();
 
-                                if (newItem.Description != null && newItem.Group.UniqueId == "LaHora")
+                            if (newItem.Description != null && newItem.Group.UniqueId == "LaHora")
+                            {
+                                // la hora
+                                var match = laHoraImageRegex.Match(newItem.Description);
+                                if (match.Success)
                                 {
-                                    // la hora
-                                    var match = laHoraImageRegex.Match(newItem.Description);
-                                    if (match.Success)
-                                    {
-                                        newItem.SetImage(match.Groups[1].Value);
-                                        newItem.Description = match.Groups[2].Value;
-                                    }
-                                    else
-                                    {
-                                        match = laHora2ImageRegex.Match(newItem.Description);
-                                        if (match.Success)
-                                        {
-                                            newItem.SetImage(match.Groups[1].Value);
-                                        }
-                                        newItem.Description = StripHTML(newItem.Description);
-                                    }
+                                    newItem.SetImage(match.Groups[1].Value);
+                                    newItem.Description = match.Groups[2].Value;
                                 }
-                                else if (newItem.Description != null && newItem.Group.UniqueId == "Siglo21")
+                                else
                                 {
-                                    var match = siglo21ImageRegex.Match(newItem.Description);
-
+                                    match = laHora2ImageRegex.Match(newItem.Description);
                                     if (match.Success)
                                     {
                                         newItem.SetImage(match.Groups[1].Value);
-                                        
                                     }
-
                                     newItem.Description = StripHTML(newItem.Description);
                                 }
+                            }
+                            else if (newItem.Description != null && newItem.Group.UniqueId == "Siglo21")
+                            {
+                                var match = siglo21ImageRegex.Match(newItem.Description);
 
-                                if (newItem.Description != null && newItem.Description.Length > 200)
+                                if (match.Success)
                                 {
-                                    newItem.Description = newItem.Description.Substring(0, 200);
+                                    newItem.SetImage(match.Groups[1].Value);
                                 }
+
+                                newItem.Description = StripHTML(newItem.Description);
                             }
-                            else if (reader.Name == "pubDate")
+
+                            if (newItem.Description != null && newItem.Description.Length > 200)
                             {
-                                
+                                newItem.Description = newItem.Description.Substring(0, 200);
                             }
-                            else if (reader.Name == "author")
+                        }
+                        else if (reader.Name == "pubDate")
+                        {
+                        }
+                        else if (reader.Name == "author")
+                        {
+                        }
+                        else if (reader.Name == "enclosure")
+                        {
+                            while (reader.MoveToNextAttribute())
                             {
-                                 
-                            }
-                            else if (reader.Name == "enclosure")
-                            {
-                                while (reader.MoveToNextAttribute())
+                                if (reader.Name == "url")
                                 {
-                                    if (reader.Name == "url")
-                                    {
-                                        newItem.SetImage(reader.Value);
-                                    }
-                                }
-                            }
-                            else if (reader.Name == "content:encoded")
-                            {
-                                var content = await reader.ReadElementContentAsStringAsync();
-                                if (content != null)
-                                {
-                                    var match = publiNewsImageRegex.Match(content);
-                                    if (match.Success)
-                                    {
-                                        newItem.SetImage(match.Groups[1].Value);
-                                    }
+                                    newItem.SetImage(reader.Value);
                                 }
                             }
                         }
-                    }
-                    else if (reader.NodeType == XmlNodeType.EndElement)
-                    {
-                        if (reader.Name == "item")
+                        else if (reader.Name == "content:encoded")
                         {
-                            sampleDataGroup.Items.Add(newItem);
-                            newItem = null;  
+                            var content = await reader.ReadElementContentAsStringAsync();
+                            if (content != null)
+                            {
+                                var match = publiNewsImageRegex.Match(content);
+                                if (match.Success)
+                                {
+                                    newItem.SetImage(match.Groups[1].Value);
+                                }
+                            }
                         }
                     }
                 }
+                else if (reader.NodeType == XmlNodeType.EndElement)
+                {
+                    if (reader.Name == "item")
+                    {
+                        group.Items.Add(newItem);
+                        newItem = null;
+                    }
+                }
             }
-            
         }
 
         private static string StripHTML(string htmlText)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Tracing;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.ApplicationSettings;
@@ -7,6 +8,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using GtPress.StoreApp.Common;
 // The Grid App template is documented at http://go.microsoft.com/fwlink/?LinkId=234226
+using GtPress.StoreApp.Loggin;
 using GtPress.StoreApp.Views;
 
 namespace GtPress.StoreApp
@@ -24,6 +26,15 @@ namespace GtPress.StoreApp
         {
             this.InitializeComponent();
             this.Suspending += OnSuspending;
+            var log = new StorageFileEventListener("GpPressLoggin");
+            log.EnableEvents(MetroEventSource.Log, EventLevel.Error);
+            this.UnhandledException +=
+                (sender, args) =>
+                {
+                    args.Handled = true;
+                    MetroEventSource.Log.Critical(string.Format("Ocurrio un error inesperado: {0}", args.Exception));
+                    Exit();
+                };
         }
 
         /// <summary>
