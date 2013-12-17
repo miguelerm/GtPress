@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
-  <Identity Name="78MikeDeveloper.GtPress" Publisher="CN=357B5427-7D84-4292-A7BA-E012F9D3E988" Version="1.0.0.2" />
+  <Identity Name="78MikeDeveloper.GtPress" Publisher="CN=357B5427-7D84-4292-A7BA-E012F9D3E988" Version="1.0.0.3" />
   <Properties>
     <DisplayName>GtPress</DisplayName>
     <PublisherDisplayName>Mike Developer</PublisherDisplayName>
